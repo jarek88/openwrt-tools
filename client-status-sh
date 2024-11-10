@@ -3,7 +3,7 @@ VPN_CLIENTS="$(cat /var/run/openvpn.*.status | sed -n '/ROUTING TABLE/,/GLOBAL S
 echo > "$STATUS_FILE"
 echo "$VPN_CLIENTS" | while IFS= read -r line; do
     echo "<div class=\"tr\">" >> "$STATUS_FILE"
-    IFS=','; set -- $line  # Rozdziela linię na argumenty po przecinkach
+    IFS=','; set -- $line
     for client_field in "$@"; do
         echo "<div class=\"td\">" >> "$STATUS_FILE"
         echo "$client_field" >> "$STATUS_FILE"

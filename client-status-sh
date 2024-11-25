@@ -1,6 +1,8 @@
 STATUS_FILE="/tmp/openvpn_clients.htm"
+STATUS_PPTP_FILE="/tmp/pptp_clients.htm"
 VPN_CLIENTS="$(cat /var/run/openvpn.*.status | sed -n '/ROUTING TABLE/,/GLOBAL STATS/p' | tail -n+3 | sed 's/GLOBAL STATS//g')"
 echo > "$STATUS_FILE"
+echo > "$STATUS_PPTP_FILE"
 echo "$VPN_CLIENTS" | while IFS= read -r line; do
     echo "<div class=\"tr\">" >> "$STATUS_FILE"
     IFS=','; set -- $line
@@ -11,3 +13,33 @@ echo "$VPN_CLIENTS" | while IFS= read -r line; do
     done
     echo "</div>" >> "$STATUS_FILE"
 done
+
+# Get peer address for ppp0
+peer_ip=$(ip addr show ppp0 | awk '/peer/ {for (i=1; i<=NF; i++) if ($i == "peer") print $(i+1)}' | cut -d'/' -f1)
+
+# Get last logread line of connected client
+last_client=$(logread -e pptpd | grep "control connection started" | tail -n 1)
+
+if [ -n "$last_client" ]; then
+    client_date=$(echo "$last_client" | awk '{print $1, $2, $3, $4}')
+    client_ip=$(echo "$last_client" | awk -F'Client ' '{print $2}' | awk '{print $1}')
+else
+    client_date=""
+    client_ip=""
+fi
+
+cat <<EOF > "$STATUS_PPTP_FILE"
+<div class="tr">
+<div class="td">
+$peer_ip
+</div>
+<div class="td">
+</div>
+<div class="td">
+$client_ip
+</div>
+<div class="td">
+$client_date
+</div>
+</div>
+EOF
